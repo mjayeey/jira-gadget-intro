@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+		<ModulePrefs title="Introduction"
+			directory_title="Introduction"
+			description="A gadget to intro dashboard in JIRA"
+			author="zulong">
+		<Optional feature="gadget-directory">
+				<Param name="categories">
+						JIRA
+				</Param>
+		</Optional>
+		<Locale messages="__ATLASSIAN_BASE_URL__/download/resources/com.jiraquips.jiraquips/i18n/ALL_ALL.xml"/>
+		<Optional feature="atlassian.util"/>
+		<Require feature="oauthpopup"/>
+		#oauth
+		<Require feature="dynamic-height" />
+		</ModulePrefs>
+		<Content type="html" view="profile">
+        <![CDATA[
+        #requireResource("com.atlassian.jira.gadgets:common")
+        #requireResource("com.atlassian.gadgets.publisher:ajs-gadgets")
+        #requireResource("org.ingomohr.jira.jira-versions-gadget:jira-versions-gadget-resources")
+        #includeResources()
+        <style type="text/css">
+            #editable-text {
+                max-width: 450px; /* 设置最大宽度为 450 像素 */
+            }
+            #editor-container {
+                "display": "flex",
+                "flex-flow": "column nowrap",
+                "align-items": "center"
+            }
+        </style>
+        <script type="text/javascript">
+            let gadget = null;
+            (function () {
+                gadget = AJS.Gadget({
+                    baseUrl: "__ATLASSIAN_BASE_URL__",
+                    useOauth: "/rest/gadget/1.0/currentUser",
+                    view: {
+                        template: function(args) {
+                            var gadget = this;
+
+                            gadget.getView().html('<div id="editor-container"></div>');
+
+                            var editorContainer = AJS.$("#editor-container");
+                            var editableText = AJS.$("<div id='editable-text' onclick='makeEditable()'>这里是默认文本</div>");
+                            var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
+
+                            editorContainer.append(editableText);
+                            saveButton.insertAfter(editableText); // 插入到文本块后面
+
+                            // 初始化时根据容器宽度自适应 Gadget 的高度
+                            var containerWidth = AJS.$('#editor-container').width();
+                            gadget.resize(containerWidth, 150); // 初始化高度为 150px
+
+
+                        },
+                        args: [{
+                            key: "versionData",
+                            ajaxOptions: function() {
+                                return {
+                                    url: "/rest/jira-versions-gadget/1.0/versions.json"
+                                };
+                            }
+                        }]
+                    }
+                });
+            })();
+
+            function makeEditable() {
+                var text = document.getElementById("editable-text");
+                var saveButton = document.getElementById("save-button");
+                text.contentEditable = true;
+                text.focus();
+                saveButton.style.display = "inline";
+
+                // 在编辑文本时调整 Gadget 的大小
+                AJS.$('#editable-text').on('input', resizeGadget);
+
+                // 在保存文本时调整 Gadget 的大小
+                AJS.$('#save-button').on('click', saveText);
+            }
+            
+   			function saveText() {
+                // 此处是保存文本的代码...
+                
+                // 调整 Gadget 的大小
+                resizeGadget();
+            }
+
+            function resizeGadget() {
+                // 获得可编辑文本框的高度
+                var textHeight = AJS.$('#editable-text')[0].scrollHeight;
+                
+                // 通过设置新的高度来调整 Gadget 的大小
+                gadget.resize(AJS.$('#editor-container').width(), textHeight + 50);
+            }
+            
+            
+        </script>
+        ]]>
+    </Content>
+</Module>

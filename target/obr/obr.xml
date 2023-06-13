@@ -1,0 +1,22 @@
+<repository lastmodified='20230613023307.941'>
+  <resource id='com.zulong.plugins.jira-gadget-intro/1.0.0.SNAPSHOT' symbolicname='com.zulong.plugins.jira-gadget-intro' presentationname='jira-gadget-intro' uri='jira-gadget-intro-1.0.0-SNAPSHOT.jar' version='1.0.0.SNAPSHOT'>
+    <description>This is the com.zulong.plugins:jira-gadget-intro plugin for Atlassian JIRA.</description>
+    <size>215022</size>
+    <documentation>http://www.example.com/</documentation>
+    <capability name='bundle'>
+      <p n='symbolicname' v='com.zulong.plugins.jira-gadget-intro'/>
+      <p n='presentationname' v='jira-gadget-intro'/>
+      <p n='version' t='version' v='1.0.0.SNAPSHOT'/>
+      <p n='manifestversion' v='2'/>
+    </capability>
+    <capability name='package'>
+      <p n='package' v='com.zulong.plugins.api'/>
+      <p n='version' t='version' v='1.0.0'/>
+    </capability>
+    <require name='package' filter='(&amp;(package=com.atlassian.plugin.spring.scanner.annotation.export))' extend='false' multiple='false' optional='false'>Import package com.atlassian.plugin.spring.scanner.annotation.export</require>
+    <require name='package' filter='(&amp;(package=com.atlassian.plugin.spring.scanner.annotation.imports))' extend='false' multiple='false' optional='false'>Import package com.atlassian.plugin.spring.scanner.annotation.imports</require>
+    <require name='package' filter='(&amp;(package=com.atlassian.sal.api))' extend='false' multiple='false' optional='false'>Import package com.atlassian.sal.api</require>
+    <require name='package' filter='(&amp;(package=com.zulong.plugins.api)(version&gt;=1.0.0)(!(version&gt;=2.0.0)))' extend='false' multiple='false' optional='false'>Import package com.zulong.plugins.api;version="[1.0,2)"</require>
+    <require name='package' filter='(&amp;(package=javax.inject))' extend='false' multiple='false' optional='false'>Import package javax.inject</require>
+  </resource>
+</repository>
