@@ -4,16 +4,20 @@
 			directory_title="Introduction"
 			description="A gadget to intro dashboard in JIRA"
 			author="zulong">
-		<Optional feature="gadget-directory">
-				<Param name="categories">
-						JIRA
-				</Param>
-		</Optional>
-		<Locale messages="__ATLASSIAN_BASE_URL__/download/resources/com.jiraquips.jiraquips/i18n/ALL_ALL.xml"/>
-		<Optional feature="atlassian.util"/>
-		<Require feature="oauthpopup"/>
-		#oauth
-		<Require feature="dynamic-height" />
+            <Optional feature="gadget-directory">
+                    <Param name="categories">
+                            JIRA
+                    </Param>
+            </Optional>
+            <Optional feature="atlassian.util" />
+            <Optional feature="auth-refresh" />
+            <Require feature="views" />
+            <Require feature="dynamic-height"/>
+            <Require feature="settitle"/>
+            <Require feature="setprefs"/>
+            <Require feature="oauthpopup"/>
+            #oauth
+            <Locale messages="__ATLASSIAN_BASE_URL__/download/resources/org.ingomohr.jira.jira-versions-gadget/i18n/ALL_ALL.xml"/>
 		</ModulePrefs>
 		<Content type="html" view="profile">
         <![CDATA[
@@ -31,20 +35,33 @@
                 "align-items": "center"
             }
         </style>
+        <head>
+            <title>My Gadget</title>
+            <script src="https://connect-cdn.atl-paas.net/all.js"></script>
+        </head>
+        <body>
         <script type="text/javascript">
             let gadget = null;
+            
             (function () {
                 gadget = AJS.Gadget({
                     baseUrl: "__ATLASSIAN_BASE_URL__",
                     useOauth: "/rest/gadget/1.0/currentUser",
+                    id: 'my-gadget',
                     view: {
+                        onResizeAdjustHeight: true,
+					    onResizeReload: true,
                         template: function(args) {
                             var gadget = this;
 
                             gadget.getView().html('<div id="editor-container"></div>');
 
                             var editorContainer = AJS.$("#editor-container");
-                            var editableText = AJS.$("<div id='editable-text' onclick='makeEditable()'>这里是默认文本</div>");
+                            var myPref = gadget.getPref("myPref") || "这里是默认文本";
+                            console.log(myPref);
+                            var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
+                            console.log(text);
+                            var editableText = AJS.$(text);
                             var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
 
                             editorContainer.append(editableText);
@@ -53,8 +70,6 @@
                             // 初始化时根据容器宽度自适应 Gadget 的高度
                             var containerWidth = AJS.$('#editor-container').width();
                             gadget.resize(containerWidth, 150); // 初始化高度为 150px
-
-
                         },
                         args: [{
                             key: "versionData",
@@ -84,7 +99,22 @@
             
    			function saveText() {
                 // 此处是保存文本的代码...
-                
+                console.log(gadget);
+                var currentText = AJS.$('#editable-text').text();
+                console.log('当前文本内容: ' + currentText);
+
+                gadget.savePref('myPref', currentText); 
+
+                console.log('当前文本内容2: ' + gadget.getPref('myPref'));
+
+                var gadgetId = gadget.getPrefs().getModuleId();
+                console.log("gadgetId " + gadgetId);
+                var data = {
+                    "myKey": "myValue"
+                };
+                AP.db.save(gadgetId, 'myData', data);
+
+                AJS.$('#save-button').hide();
                 // 调整 Gadget 的大小
                 resizeGadget();
             }
@@ -92,13 +122,14 @@
             function resizeGadget() {
                 // 获得可编辑文本框的高度
                 var textHeight = AJS.$('#editable-text')[0].scrollHeight;
-                
+                console.log('当前高度为：', textHeight);
                 // 通过设置新的高度来调整 Gadget 的大小
                 gadget.resize(AJS.$('#editor-container').width(), textHeight + 50);
+
+                
             }
-            
-            
         </script>
+        </body>
         ]]>
     </Content>
 </Module>
