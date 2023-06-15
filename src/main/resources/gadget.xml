@@ -27,7 +27,7 @@
         #includeResources()
         <style type="text/css">
             #editable-text {
-                max-width: 450px; /* 设置最大宽度为 450 像素 */
+                max-width: 100%; /* 设置最大宽度为 450 像素 */
             }
             #editor-container {
                 "display": "flex",
@@ -35,11 +35,6 @@
                 "align-items": "center"
             }
         </style>
-        <head>
-            <title>My Gadget</title>
-            <script src="https://connect-cdn.atl-paas.net/all.js"></script>
-        </head>
-        <body>
         <script type="text/javascript">
             let gadget = null;
             
@@ -49,27 +44,86 @@
                     useOauth: "/rest/gadget/1.0/currentUser",
                     id: 'my-gadget',
                     view: {
-                        onResizeAdjustHeight: true,
+                        onResizeAdjustHeight: false,
 					    onResizeReload: true,
                         template: function(args) {
                             var gadget = this;
 
+                            var dashboardId = window.parent.location.search.match(/selectPageId=(\d+)/)[1];
+                            console.log(dashboardId);
+                            var gadgetId = gadget.getPrefs().getModuleId();
+                            console.log("gadgetId " + gadgetId);
+
                             gadget.getView().html('<div id="editor-container"></div>');
 
-                            var editorContainer = AJS.$("#editor-container");
-                            var myPref = gadget.getPref("myPref") || "这里是默认文本";
-                            console.log(myPref);
-                            var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
-                            console.log(text);
-                            var editableText = AJS.$(text);
-                            var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
+                            AJS.$.ajax({
+                                url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/',
+                                type: 'GET',
+                                dataType: 'json',
+                                contentType: 'application/json',
+                                success: function(data) {
+                                    var keys = data.keys;
+                                    console.log(keys);
+                                    var haveText = false;
+                                    keys.forEach(function(key) {
+                                        console.log(key);
+                                        if(key.key=='text')
+                                        {
+                                            haveText = true;
+                                        }
+                                    });
 
-                            editorContainer.append(editableText);
-                            saveButton.insertAfter(editableText); // 插入到文本块后面
+                                    if(haveText)
+                                    {
+                                        AJS.$.ajax({
+                                            url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/' + 'text',
+                                            type: 'GET',
+                                            dataType: 'json',
+                                            contentType: 'application/json',
+                                            success: function(data) {
+                                                var text = data.value.value;
+                                                console.log(text);
 
-                            // 初始化时根据容器宽度自适应 Gadget 的高度
-                            var containerWidth = AJS.$('#editor-container').width();
-                            gadget.resize(containerWidth, 150); // 初始化高度为 150px
+                                                var editorContainer = AJS.$("#editor-container");
+                                                var myPref = text || "这里是默认文本";
+                                                console.log(myPref);
+                                                var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
+                                                console.log(text);
+                                                var editableText = AJS.$(text);
+                                                var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
+
+                                                editorContainer.append(editableText);
+                                                saveButton.insertAfter(editableText); // 插入到文本块后面
+
+                                                // 初始化时根据容器宽度自适应 Gadget 的高度
+                                                var containerWidth = AJS.$('#editor-container').width();
+                                                gadget.resize(containerWidth, 150); // 初始化高度为 150px
+                                            },
+                                            error: function(xhr, status, error) {
+                                            }
+                                        });
+                                    }
+                                    else
+                                    {
+                                        var editorContainer = AJS.$("#editor-container");
+                                        var myPref = "这里是默认文本";
+                                        console.log(myPref);
+                                        var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
+                                        console.log(text);
+                                        var editableText = AJS.$(text);
+                                        var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
+
+                                        editorContainer.append(editableText);
+                                        saveButton.insertAfter(editableText); // 插入到文本块后面
+
+                                        // 初始化时根据容器宽度自适应 Gadget 的高度
+                                        var containerWidth = AJS.$('#editor-container').width();
+                                        gadget.resize(containerWidth, 150); // 初始化高度为 150px
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                }
+                            });
                         },
                         args: [{
                             key: "versionData",
@@ -107,16 +161,36 @@
 
                 console.log('当前文本内容2: ' + gadget.getPref('myPref'));
 
+                var dashboardId = window.parent.location.search.match(/selectPageId=(\d+)/)[1];
+                console.log(dashboardId);
                 var gadgetId = gadget.getPrefs().getModuleId();
                 console.log("gadgetId " + gadgetId);
-                var data = {
-                    "myKey": "myValue"
-                };
-                AP.db.save(gadgetId, 'myData', data);
 
+                AJS.$.ajax({
+                    url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/' + 'text',
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({ 'value': currentText }),
+                    success: function() {
+                        console.log('Data saved successfully.');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to save data:', status, error);
+                    }
+                });
                 AJS.$('#save-button').hide();
                 // 调整 Gadget 的大小
-                resizeGadget();
+                //resizeGadget();
+                var iframe = window.frameElement;
+                iframe.contentWindow.location.reload();
+            }
+
+            function getDashboardId() {
+                var searchParams = new URLSearchParams(window.location.search);
+                console.log(searchParams);
+                var dashboardId = searchParams.get('dashboardId');
+                return dashboardId;
             }
 
             function resizeGadget() {
@@ -124,12 +198,24 @@
                 var textHeight = AJS.$('#editable-text')[0].scrollHeight;
                 console.log('当前高度为：', textHeight);
                 // 通过设置新的高度来调整 Gadget 的大小
+                var newHeight = textHeight + 50;
                 gadget.resize(AJS.$('#editor-container').width(), textHeight + 50);
+
+                
+                // 调整所属iframe的高度
+                function adjustIframeHeight() {
+                    var iframe = window.frameElement;
+                    console.log(iframe);
+                    
+                    var height = document.documentElement.scrollHeight;
+                    iframe.style.height = newHeight + 'px';
+                    iframe.contentWindow.location.reload();
+                }
+                //adjustIframeHeight();
 
                 
             }
         </script>
-        </body>
         ]]>
     </Content>
 </Module>
