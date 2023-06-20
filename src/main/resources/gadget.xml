@@ -1,43 +1,125 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
 <Module>
-		<ModulePrefs title="Introduction"
-			directory_title="Introduction"
-			description="A gadget to intro dashboard in JIRA"
-			author="zulong">
-            <Optional feature="gadget-directory">
-                    <Param name="categories">
-                            JIRA
-                    </Param>
-            </Optional>
-            <Optional feature="atlassian.util" />
-            <Optional feature="auth-refresh" />
-            <Require feature="views" />
-            <Require feature="dynamic-height"/>
-            <Require feature="settitle"/>
-            <Require feature="setprefs"/>
-            <Require feature="oauthpopup"/>
-            #oauth
-            <Locale messages="__ATLASSIAN_BASE_URL__/download/resources/org.ingomohr.jira.jira-versions-gadget/i18n/ALL_ALL.xml"/>
-		</ModulePrefs>
-		<Content type="html" view="profile">
-        <![CDATA[
-        #requireResource("com.atlassian.jira.gadgets:common")
-        #requireResource("com.atlassian.gadgets.publisher:ajs-gadgets")
-        #requireResource("org.ingomohr.jira.jira-versions-gadget:jira-versions-gadget-resources")
+    <ModulePrefs title="Introduction"
+        directory_title="Introduction"
+        description="A gadget to intro dashboard in JIRA"
+        author="zulong">
+        <Optional feature="gadget-directory">
+                <Param name="categories">
+                        JIRA
+                </Param>
+        </Optional>
+        <Optional feature="atlassian.util" />
+        <Optional feature="auth-refresh" />
+        <Require feature="views" />
+        <Require feature="dynamic-height"/>
+        <Require feature="settitle"/>
+        <Require feature="setprefs"/>
+        <Require feature="oauthpopup"/>
+        #oauth
+        <Locale messages="__ATLASSIAN_BASE_URL__/download/resources/org.ingomohr.jira.jira-versions-gadget/i18n/ALL_ALL.xml"/>
+    </ModulePrefs>
+    <Content type="html" view="profile">
+    <![CDATA[
+    #requireResource("com.atlassian.jira.gadgets:common")
+    #requireResource("com.atlassian.gadgets.publisher:ajs-gadgets")
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js"></script>
         #includeResources()
+        <script>
+            
+        </script>
+    </head>
+    <body>
         <style type="text/css">
-            #editable-text {
-                max-width: 100%; /* 设置最大宽度为 450 像素 */
-            }
             #editor-container {
-                "display": "flex",
-                "flex-flow": "column nowrap",
-                "align-items": "center"
+                display: flex;
+                flex-flow: column nowrap;
+                min-height: 800px; /* 最小高度 */
+                max-height: 800px; /* 最小高度 */
+                overflow-y: scroll;
             }
+            #save-button {
+                margin: 5px 20px 5px 20px; !important;
+            }
+            .demo-dfree {
+                position: relative;
+                box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
+                text-align: left;
+                color: #626262;
+                font-size: 14px;
+            }
+            .demo-dfree *[contentEditable="true"]:hover {
+                outline: 1px solid #1976D2;
+            }
+            .demo-dfree h1 {
+                color: #1976D2;
+                font-size: 2em;
+            }
+            .demo-dfree h2 {
+                color: #1976D2;
+                font-size: 2em;
+            }
+            .demo-dfree h3 {
+                font-size: 1.5em;
+                color: #403f42;
+                color: inherit;
+            }
+            .demo-dfree h2,
+            .demo-dfree h3 {
+                margin-bottom: 0px;
+                margin-top: 0px;
+                line-height: 40px;
+            }
+            .demo-dfree ul,
+            .demo-dfree ol {
+                padding-left: 20px;
+            }
+            .demo-dfree ul {
+                list-style: disc;
+            }
+            .demo-dfree ol {
+                list-style: decimal;
+            }
+            .demo-dfree a {
+                text-decoration: underline;
+            }
+            .demo-dfree textarea {
+                display: none;
+            }
+            .demo-dfree .dfree-header {
+                font-size: 2.4em;
+                text-align: center;
+                margin: 10px;
+            }
+            .demo-dfree .dfree-body {
+                padding: 20px;
+                padding-top: 0px;
+            }
+            .demo-dfree .dfree-body p {
+                margin-bottom: 10px;
+            }
+            .demo-dfree .dfree-body blockquote {
+                margin-left: 30px;
+                padding-left: 10px;
+                margin-right: 40px;
+                font-style: italic;
+                border-left: 1px solid #696969;
+            }
+            .demo-dfree .dfree-body a {
+                text-decoration: underline;
+            }
+            .demo-dfree .dfree-body td,
+            .demo-dfree .dfree-body tr {
+                border: 1px solid #696969;
+            }
+
         </style>
         <script type="text/javascript">
             let gadget = null;
-            
             (function () {
                 gadget = AJS.Gadget({
                     baseUrl: "__ATLASSIAN_BASE_URL__",
@@ -54,76 +136,77 @@
                             var gadgetId = gadget.getPrefs().getModuleId();
                             console.log("gadgetId " + gadgetId);
 
-                            gadget.getView().html('<div id="editor-container"></div>');
+                            var htmlText = '<div class="demo-dfree"><div id="editor-container" class="dfree-body mce-content-body" contenteditable="true" style="position: relative;" spellcheck="false"></div><button id="save-button" onclick="saveText()">保存文本</button></div>';
 
-                            AJS.$.ajax({
-                                url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/',
-                                type: 'GET',
-                                dataType: 'json',
-                                contentType: 'application/json',
-                                success: function(data) {
-                                    var keys = data.keys;
-                                    console.log(keys);
-                                    var haveText = false;
-                                    keys.forEach(function(key) {
-                                        console.log(key);
-                                        if(key.key=='text')
-                                        {
-                                            haveText = true;
-                                        }
-                                    });
-
-                                    if(haveText)
-                                    {
-                                        AJS.$.ajax({
-                                            url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/' + 'text',
-                                            type: 'GET',
-                                            dataType: 'json',
-                                            contentType: 'application/json',
-                                            success: function(data) {
-                                                var text = data.value.value;
-                                                console.log(text);
-
-                                                var editorContainer = AJS.$("#editor-container");
-                                                var myPref = text || "这里是默认文本";
-                                                console.log(myPref);
-                                                var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
-                                                console.log(text);
-                                                var editableText = AJS.$(text);
-                                                var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
-
-                                                editorContainer.append(editableText);
-                                                saveButton.insertAfter(editableText); // 插入到文本块后面
-
-                                                // 初始化时根据容器宽度自适应 Gadget 的高度
-                                                var containerWidth = AJS.$('#editor-container').width();
-                                                gadget.resize(containerWidth, 150); // 初始化高度为 150px
-                                            },
-                                            error: function(xhr, status, error) {
+                            //gadget.getView().html('<div class='demo-dfree'><div id="editor-container" contenteditable="true"></div><button id="save-button" onclick="saveText()">保存文本</button></div>');
+                            gadget.getView().html(htmlText);
+                            
+                            tinymce.init({
+                                selector: '#editor-container',
+                                menubar: false,
+                                inline: true,
+                                plugins: [
+                                    'autolink',
+                                    'codesample',
+                                    'link',
+                                    'lists',
+                                    'media',
+                                    'powerpaste',
+                                    'table',
+                                    'image',
+                                    'quickbars',
+                                    'codesample',
+                                    'help'
+                                ],
+                                toolbar: false,
+                                quickbars_insert_toolbar: 'quicktable image media codesample',
+                                quickbars_selection_toolbar: 'bold italic underline | formatselect | blockquote quicklink',
+                                contextmenu: 'undo redo | inserttable | cell row column deletetable | help',
+                                powerpaste_word_import: 'clean',
+                                powerpaste_html_import: 'clean',
+                            }).then(function () {
+                                AJS.$.ajax({
+                                    url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/',
+                                    type: 'GET',
+                                    dataType: 'json',
+                                    contentType: 'application/json',
+                                    success: function(data) {
+                                        var keys = data.keys;
+                                        console.log(keys);
+                                        var haveText = false;
+                                        keys.forEach(function(key) {
+                                            console.log(key);
+                                            if(key.key=='text')
+                                            {
+                                                haveText = true;
                                             }
                                         });
-                                    }
-                                    else
-                                    {
-                                        var editorContainer = AJS.$("#editor-container");
-                                        var myPref = "这里是默认文本";
-                                        console.log(myPref);
-                                        var text = "<div id='editable-text' onclick='makeEditable()'>" + myPref + "</div>";
-                                        console.log(text);
-                                        var editableText = AJS.$(text);
-                                        var saveButton = AJS.$("<button id='save-button' onclick='saveText()' style='display: none;'>保存文本</button>");
+                                        console.log("3333333333");
 
-                                        editorContainer.append(editableText);
-                                        saveButton.insertAfter(editableText); // 插入到文本块后面
-
-                                        // 初始化时根据容器宽度自适应 Gadget 的高度
-                                        var containerWidth = AJS.$('#editor-container').width();
-                                        gadget.resize(containerWidth, 150); // 初始化高度为 150px
+                                        if(haveText)
+                                        {
+                                            AJS.$.ajax({
+                                                url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/' + 'text',
+                                                type: 'GET',
+                                                dataType: 'json',
+                                                contentType: 'application/json',
+                                                success: function(data) {
+                                                    var text = data.value.value;
+                                                    console.log("444444444444");
+                                                    console.log(text);
+                                                    var editor = tinymce.activeEditor;
+                                                    editor.setContent(text);
+                                                },
+                                                error: function(xhr, status, error) {
+                                                }
+                                            });
+                                        }
+                                    },
+                                    error: function(xhr, status, error) {
                                     }
-                                },
-                                error: function(xhr, status, error) {
-                                }
+                                });
                             });
+                        
                         },
                         args: [{
                             key: "versionData",
@@ -137,29 +220,13 @@
                 });
             })();
 
-            function makeEditable() {
-                var text = document.getElementById("editable-text");
-                var saveButton = document.getElementById("save-button");
-                text.contentEditable = true;
-                text.focus();
-                saveButton.style.display = "inline";
-
-                // 在编辑文本时调整 Gadget 的大小
-                AJS.$('#editable-text').on('input', resizeGadget);
-
-                // 在保存文本时调整 Gadget 的大小
-                AJS.$('#save-button').on('click', saveText);
-            }
-            
    			function saveText() {
                 // 此处是保存文本的代码...
-                console.log(gadget);
-                var currentText = AJS.$('#editable-text').text();
-                console.log('当前文本内容: ' + currentText);
+                var editor = tinymce.activeEditor;
+                var content = editor.getContent();
 
-                gadget.savePref('myPref', currentText); 
 
-                console.log('当前文本内容2: ' + gadget.getPref('myPref'));
+                console.log('当前文本内容2: ' + content);
 
                 var dashboardId = window.parent.location.search.match(/selectPageId=(\d+)/)[1];
                 console.log(dashboardId);
@@ -171,7 +238,7 @@
                     type: 'PUT',
                     contentType: 'application/json',
                     dataType: 'json',
-                    data: JSON.stringify({ 'value': currentText }),
+                    data: JSON.stringify({ 'value': content }),
                     success: function() {
                         console.log('Data saved successfully.');
                     },
@@ -179,11 +246,6 @@
                         console.error('Failed to save data:', status, error);
                     }
                 });
-                AJS.$('#save-button').hide();
-                // 调整 Gadget 的大小
-                //resizeGadget();
-                var iframe = window.frameElement;
-                iframe.contentWindow.location.reload();
             }
 
             function getDashboardId() {
@@ -191,6 +253,15 @@
                 console.log(searchParams);
                 var dashboardId = searchParams.get('dashboardId');
                 return dashboardId;
+            }
+
+            function adjustIframeHeight(newHeight) {
+                var iframe = window.frameElement;
+                console.log(iframe);
+                
+                var height = document.documentElement.scrollHeight;
+                iframe.style.height = newHeight + 'px';
+                iframe.contentWindow.location.reload();
             }
 
             function resizeGadget() {
@@ -216,6 +287,10 @@
                 
             }
         </script>
-        ]]>
+    </body>
+    
+    
+    </html>
+    ]]>
     </Content>
 </Module>
