@@ -27,7 +27,7 @@
     <!DOCTYPE html>
     <html>
     <head>
-        <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js"></script>
+        <script src="https://cdn.tiny.cloud/1/seoyfmy62vngg959zpcapgl5po4v8k5hhdfpg888tcrwfg7h/tinymce/5/tinymce.min.js"></script>
         #includeResources()
         <script>
             
@@ -38,9 +38,6 @@
             #editor-container {
                 display: flex;
                 flex-flow: column nowrap;
-                min-height: 800px; /* 最小高度 */
-                max-height: 800px; /* 最小高度 */
-                overflow-y: scroll;
             }
             #save-button {
                 margin: 5px 20px 5px 20px; !important;
@@ -120,6 +117,7 @@
         </style>
         <script type="text/javascript">
             let gadget = null;
+            let ignoreMutation = false;
             (function () {
                 gadget = AJS.Gadget({
                     baseUrl: "__ATLASSIAN_BASE_URL__",
@@ -136,9 +134,7 @@
                             var gadgetId = gadget.getPrefs().getModuleId();
                             console.log("gadgetId " + gadgetId);
 
-                            var htmlText = '<div class="demo-dfree"><div id="editor-container" class="dfree-body mce-content-body" contenteditable="true" style="position: relative;" spellcheck="false"></div><button id="save-button" onclick="saveText()">保存文本</button></div>';
-
-                            //gadget.getView().html('<div class='demo-dfree'><div id="editor-container" contenteditable="true"></div><button id="save-button" onclick="saveText()">保存文本</button></div>');
+                            var htmlText = '<div class="demo-dfree"><div id="editor-container" class="dfree-body mce-content-body" contenteditable="true" style="position: relative;" spellcheck="false"></div><button id="save-button" onclick="saveText(event)" style="display: none;">保存文本</button></div>';
                             gadget.getView().html(htmlText);
                             
                             tinymce.init({
@@ -164,6 +160,36 @@
                                 contextmenu: 'undo redo | inserttable | cell row column deletetable | help',
                                 powerpaste_word_import: 'clean',
                                 powerpaste_html_import: 'clean',
+                                setup: function (editor) {
+                                    // 在编辑器准备完毕后添加 click 事件监听器
+                                    editor.on('init', function (e) {
+                                        editor.getDoc().body.addEventListener('click', function (event) {
+                                            console.log('save-button show');
+                                            //AJS.$('#save-button').show();
+                                            var target = event.target || event.srcElement;
+                                            if (target.tagName === 'A') {
+                                                event.preventDefault();
+                                                window.open(target.href, '_blank');
+                                            }
+                                        });
+                                    });
+                                },
+                                init_instance_callback: function (editor) {
+                                    // 使用 MutationObserver 监听编辑器内部 HTML 内容的变化
+                                    
+                                    var observer = new MutationObserver(function (mutations) {
+                                        if (ignoreMutation) {
+                                            ignoreMutation = false;
+                                            return;
+                                        }
+                                        // 编辑器内容变化时更新编辑器外层元素的高度
+                                        var editorHeight = editor.getElement().offsetHeight;
+                                        console.log('editorHeight' + editorHeight);
+                                        resizeGadget(editorHeight + 50);
+                                        
+                                    });
+                                    observer.observe(editor.getElement(), { childList: true, subtree: true });
+                                }
                             }).then(function () {
                                 AJS.$.ajax({
                                     url: '/rest/api/2/dashboard/' + dashboardId + '/items/' + gadgetId + '/properties/',
@@ -220,7 +246,10 @@
                 });
             })();
 
-   			function saveText() {
+   			function saveText(event) {
+                console.log('save-button hide');
+                event.stopPropagation();
+                AJS.$('#save-button').hide();
                 // 此处是保存文本的代码...
                 var editor = tinymce.activeEditor;
                 var content = editor.getContent();
@@ -264,7 +293,11 @@
                 iframe.contentWindow.location.reload();
             }
 
-            function resizeGadget() {
+            function resizeGadget(newHeight) {
+                ignoreMutation = true;
+                gadget.resize(null, newHeight);
+
+                /*
                 // 获得可编辑文本框的高度
                 var textHeight = AJS.$('#editable-text')[0].scrollHeight;
                 console.log('当前高度为：', textHeight);
@@ -283,7 +316,7 @@
                     iframe.contentWindow.location.reload();
                 }
                 //adjustIframeHeight();
-
+                */
                 
             }
         </script>
