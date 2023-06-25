@@ -35,13 +35,6 @@
     </head>
     <body>
         <style type="text/css">
-            #editor-container {
-                display: flex;
-                flex-flow: column nowrap;
-            }
-            #save-button {
-                margin: 5px 20px 5px 20px; !important;
-            }
             .demo-dfree {
                 position: relative;
                 box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
@@ -118,25 +111,27 @@
         <script type="text/javascript">
             let gadget = null;
             let ignoreMutation = false;
+            let preHeight = 0;
             (function () {
                 gadget = AJS.Gadget({
                     baseUrl: "__ATLASSIAN_BASE_URL__",
                     useOauth: "/rest/gadget/1.0/currentUser",
                     id: 'my-gadget',
                     view: {
-                        onResizeAdjustHeight: false,
-					    onResizeReload: true,
+                        onResizeAdjustHeight: true,
+					    onResizeReload: false,
                         template: function(args) {
                             var gadget = this;
+
 
                             var dashboardId = window.parent.location.search.match(/selectPageId=(\d+)/)[1];
                             console.log(dashboardId);
                             var gadgetId = gadget.getPrefs().getModuleId();
                             console.log("gadgetId " + gadgetId);
 
-                            var htmlText = '<div class="demo-dfree"><div id="editor-container" class="dfree-body mce-content-body" contenteditable="true" style="position: relative;" spellcheck="false"></div><button id="save-button" onclick="saveText(event)" style="display: none;">保存文本</button></div>';
+                            var htmlText = '<div class="demo-dfree"><div id="editor-container" class="dfree-body mce-content-body" contenteditable="true" spellcheck="false"></div></div>';
                             gadget.getView().html(htmlText);
-                            
+
                             tinymce.init({
                                 selector: '#editor-container',
                                 menubar: false,
@@ -155,7 +150,7 @@
                                     'help'
                                 ],
                                 toolbar: false,
-                                quickbars_insert_toolbar: 'quicktable image media codesample',
+                                quickbars_insert_toolbar: 'quicktable image media codesample customButton',
                                 quickbars_selection_toolbar: 'bold italic underline | formatselect | blockquote quicklink',
                                 contextmenu: 'undo redo | inserttable | cell row column deletetable | help',
                                 powerpaste_word_import: 'clean',
@@ -164,8 +159,7 @@
                                     // 在编辑器准备完毕后添加 click 事件监听器
                                     editor.on('init', function (e) {
                                         editor.getDoc().body.addEventListener('click', function (event) {
-                                            console.log('save-button show');
-                                            //AJS.$('#save-button').show();
+                                            editor.ui.show();
                                             var target = event.target || event.srcElement;
                                             if (target.tagName === 'A') {
                                                 event.preventDefault();
@@ -176,19 +170,28 @@
                                 },
                                 init_instance_callback: function (editor) {
                                     // 使用 MutationObserver 监听编辑器内部 HTML 内容的变化
-                                    
+                                    preHeight = editor.getElement().offsetHeight;
+                                    console.log('初始高度：' + preHeight);
                                     var observer = new MutationObserver(function (mutations) {
                                         if (ignoreMutation) {
                                             ignoreMutation = false;
                                             return;
                                         }
                                         // 编辑器内容变化时更新编辑器外层元素的高度
-                                        var editorHeight = editor.getElement().offsetHeight;
-                                        console.log('editorHeight' + editorHeight);
-                                        resizeGadget(editorHeight + 50);
+                                        var editorHeight = editor.getElement().offsetHeight;                                    
+                                        resizeGadget(editorHeight);
                                         
                                     });
                                     observer.observe(editor.getElement(), { childList: true, subtree: true });
+
+                                    editor.ui.registry.addButton('customButton', {
+                                        text: 'Save',
+                                        onAction: function () {
+                                            // 按钮点击时执行的代码
+                                            saveText();
+                                            editor.ui.hide();
+                                        }
+                                    });
                                 }
                             }).then(function () {
                                 AJS.$.ajax({
@@ -232,29 +235,18 @@
                                     }
                                 });
                             });
-                        
+              
                         },
-                        args: [{
-                            key: "versionData",
-                            ajaxOptions: function() {
-                                return {
-                                    url: "/rest/jira-versions-gadget/1.0/versions.json"
-                                };
-                            }
-                        }]
+                        args: [
+                        ]
                     }
                 });
             })();
 
-   			function saveText(event) {
-                console.log('save-button hide');
-                event.stopPropagation();
-                AJS.$('#save-button').hide();
+   			function saveText() {
                 // 此处是保存文本的代码...
                 var editor = tinymce.activeEditor;
                 var content = editor.getContent();
-
-
                 console.log('当前文本内容2: ' + content);
 
                 var dashboardId = window.parent.location.search.match(/selectPageId=(\d+)/)[1];
@@ -277,47 +269,15 @@
                 });
             }
 
-            function getDashboardId() {
-                var searchParams = new URLSearchParams(window.location.search);
-                console.log(searchParams);
-                var dashboardId = searchParams.get('dashboardId');
-                return dashboardId;
-            }
-
-            function adjustIframeHeight(newHeight) {
-                var iframe = window.frameElement;
-                console.log(iframe);
-                
-                var height = document.documentElement.scrollHeight;
-                iframe.style.height = newHeight + 'px';
-                iframe.contentWindow.location.reload();
-            }
-
             function resizeGadget(newHeight) {
-                ignoreMutation = true;
-                gadget.resize(null, newHeight);
-
-                /*
-                // 获得可编辑文本框的高度
-                var textHeight = AJS.$('#editable-text')[0].scrollHeight;
-                console.log('当前高度为：', textHeight);
-                // 通过设置新的高度来调整 Gadget 的大小
-                var newHeight = textHeight + 50;
-                gadget.resize(AJS.$('#editor-container').width(), textHeight + 50);
-
-                
-                // 调整所属iframe的高度
-                function adjustIframeHeight() {
-                    var iframe = window.frameElement;
-                    console.log(iframe);
-                    
-                    var height = document.documentElement.scrollHeight;
-                    iframe.style.height = newHeight + 'px';
-                    iframe.contentWindow.location.reload();
+                console.log('preHeight: ' + preHeight);
+                console.log('newHeight: ' + newHeight);
+                if(newHeight != preHeight)
+                {
+                    preHeight = newHeight;
+                    //gadget.resize(null, null);
+                    gadgets.window.adjustHeight(newHeight);
                 }
-                //adjustIframeHeight();
-                */
-                
             }
         </script>
     </body>
